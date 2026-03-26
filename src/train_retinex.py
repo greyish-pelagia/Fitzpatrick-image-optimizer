@@ -1,5 +1,7 @@
 import argparse
 import os
+import time
+import logging
 import math
 import numpy as np
 import pandas as pd
@@ -9,6 +11,8 @@ import torch.nn.functional as F
 from torch.utils.data import DataLoader
 
 from train_deeplpf import FitzpatrickDataset, SSIMLoss
+
+from utils import setup_logger
 
 device = torch.device(
     "cuda"
@@ -247,19 +251,22 @@ def train_hybrid_pipeline(csv_path, max_samples=None, epochs=10, batch_size=4, l
     """
     Initiates isolated learning infrastructure naturally targeting Pipeline 2 logical operations robustly securely appropriately.
     """
+    log_file = "logs/training_retinex.log"
+    setup_logger(log_file)
+    logging.info(f"Starting training with device: {device}")
     os.makedirs("models", exist_ok=True)
-    print(f"Loading dataset from {csv_path} with max_samples={max_samples}")
+    logging.info(f"Loading dataset from {csv_path} with max_samples={max_samples}")
     dataset = FitzpatrickDataset(csv_path, max_samples=max_samples)
 
     if len(dataset) == 0:
-        print("Dataset is empty. Exiting.")
+        logging.error("Dataset is empty. Exiting.")
         return
 
     dataloader = DataLoader(
         dataset, batch_size=batch_size, shuffle=True, drop_last=False
     )
 
-    print(f"Initializing Context -> Using device: {device}")
+    logging.info(f"Initializing Context -> Using device: {device}")
     model = HybridRetinexFuzzyModel().to(device)
 
     l1_loss_fn = nn.L1Loss()
@@ -273,11 +280,12 @@ def train_hybrid_pipeline(csv_path, max_samples=None, epochs=10, batch_size=4, l
         optimizer, max_lr=1e-3, steps_per_epoch=len(dataloader), epochs=epochs
     )
 
-    print("==================================================================")
-    print("Initiating Pipeline 2: Hybrid Retinex-Fuzzy-CNN Training")
-    print("==================================================================")
+    logging.info(f"Initiating Training. Device: {device}")
+    
+    total_train_start = time.time()
 
     for epoch in range(epochs):
+        epoch_start = time.time()
         model.train()
         total_loss = 0.0
 
@@ -303,19 +311,27 @@ def train_hybrid_pipeline(csv_path, max_samples=None, epochs=10, batch_size=4, l
             total_loss += loss.item()
 
             if batch_idx % 10 == 0:
-                print(
+                logging.info(
                     f"Epoch [{epoch}/{epochs - 1}] Batch [{batch_idx}/{len(dataloader) - 1}] Loss: {loss.item():.4f}"
                 )
 
         avg_loss = total_loss / len(dataloader)
-        print(f"--- Epoch {epoch} Average End-to-End Loss: {avg_loss:.4f} ---")
+        logging.info(f"--- Epoch {epoch} Average End-to-End Loss: {avg_loss:.4f} ---")
 
         # Save checkpoint after every epoch
         torch.save(model.state_dict(), f"models/retinex_epoch_{epoch}.pth")
 
+        epoch_end = time.time()
+        epoch_duration = epoch_end - epoch_start
+        logging.info(f"Epoch {epoch} completed in {epoch_duration:.2f} seconds")
+
+    total_train_end = time.time()
+    total_train_duration = total_train_end - total_train_start
+    logging.info(f"Total training completed in {total_train_duration:.2f} seconds")
+
     model_save_path = "models/retinex.pth"
     torch.save(model.state_dict(), model_save_path)
-    print(f"Model Training Successfully Concluded. Model saved to {model_save_path}")
+    logging.info(f"Model Training Successfully Concluded. Model saved to {model_save_path}")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(

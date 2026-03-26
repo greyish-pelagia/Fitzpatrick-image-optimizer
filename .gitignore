@@ -24,3 +24,6 @@ results/*
 
 # Ruff
 .ruff_cache/
+
+# Logs
+logs

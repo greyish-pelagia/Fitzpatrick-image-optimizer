@@ -1,4 +1,6 @@
 import os
+import time
+import logging
 import math
 import cv2
 import numpy as np
@@ -10,6 +12,8 @@ import torch.nn.functional as F
 import torchvision
 from torch.utils.data import Dataset, DataLoader
 
+from utils import setup_logger
+
 device = torch.device(
     "cuda"
     if torch.cuda.is_available()
@@ -17,8 +21,6 @@ device = torch.device(
     if torch.backends.mps.is_available()
     else "cpu"
 )
-print(f"Using device: {device}")
-
 
 class SSIMLoss(nn.Module):
     """
@@ -211,19 +213,22 @@ class DeepLPFModel(nn.Module):
 
 
 def train_deeplpf(csv_path, max_samples=None, epochs=10, batch_size=8, lr=1e-4):
+    log_file = "logs/training_deeplpf.log"
+    setup_logger(log_file)
+    logging.info(f"Starting training with device: {device}")
     os.makedirs("models", exist_ok=True)
-    print(f"Loading dataset from {csv_path} with max_samples={max_samples}")
+    logging.info(f"Loading dataset from {csv_path} with max_samples={max_samples}")
     dataset = FitzpatrickDataset(csv_path, max_samples=max_samples)
 
     if len(dataset) == 0:
-        print("Dataset is empty. Exiting.")
+        logging.error("Dataset is empty. Exiting.")
         return
 
     dataloader = DataLoader(
         dataset, batch_size=batch_size, shuffle=True, drop_last=False
     )
 
-    print(f"Initializing Context -> Using device: {device}")
+    logging.info(f"Initializing Context -> Using device: {device}")
     model = DeepLPFModel().to(device)
 
     l1_loss_fn = nn.L1Loss()
@@ -231,11 +236,12 @@ def train_deeplpf(csv_path, max_samples=None, epochs=10, batch_size=8, lr=1e-4):
 
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 
-    print("==================================================================")
-    print("Initiating Pipeline 1: Parameter-Driven DeepLPF (Simple) Training")
-    print("==================================================================")
+    logging.info(f"Initiating Training. Device: {device}")
+    
+    total_train_start = time.time()
 
     for epoch in range(epochs):
+        epoch_start = time.time()
         model.train()
         total_loss = 0.0
 
@@ -259,19 +265,27 @@ def train_deeplpf(csv_path, max_samples=None, epochs=10, batch_size=8, lr=1e-4):
             total_loss += loss.item()
 
             if batch_idx % 10 == 0:
-                print(
+                logging.info(
                     f"Epoch [{epoch}/{epochs - 1}] Batch [{batch_idx}/{len(dataloader) - 1}] Loss: {loss.item():.4f}"
                 )
 
         avg_loss = total_loss / len(dataloader)
-        print(f"--- Epoch {epoch} Average End-to-End Loss: {avg_loss:.4f} ---")
+        logging.info(f"--- Epoch {epoch} Average End-to-End Loss: {avg_loss:.4f} ---")
 
         # Save checkpoint after every epoch
         torch.save(model.state_dict(), f"models/deeplpf_epoch_{epoch}.pth")
 
+        epoch_end = time.time()
+        epoch_duration = epoch_end - epoch_start
+        logging.info(f"Epoch {epoch} completed in {epoch_duration:.2f} seconds")
+
+    total_train_end = time.time()
+    total_train_duration = total_train_end - total_train_start
+    logging.info(f"Total training completed in {total_train_duration:.2f} seconds")
+
     model_save_path = "models/deeplpf.pth"
     torch.save(model.state_dict(), model_save_path)
-    print(f"Model Training Successfully Concluded. Model saved to {model_save_path}")
+    logging.info(f"Model Training Successfully Concluded. Model saved to {model_save_path}")
 
 
 if __name__ == "__main__":

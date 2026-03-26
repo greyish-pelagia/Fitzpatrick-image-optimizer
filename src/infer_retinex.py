@@ -1,11 +1,15 @@
 import argparse
 import os
+import time
+import logging
 import cv2
 import numpy as np
 import pandas as pd
 import torch
 
 from train_retinex import HybridRetinexFuzzyModel
+
+from utils import setup_logger
 
 device = torch.device(
     "cuda"
@@ -18,8 +22,12 @@ device = torch.device(
 def run_inference(
     model_path, csv_path, image_col, scale_col, output_dir=None, max_samples=0
 ):
-    print(f"Loading pretrained inference model from: {model_path}")
-    print(f"Target underlying hardware device context: {device}")
+    log_file = "logs/inference_retinex.log"
+    setup_logger(log_file)
+    logging.info(f"Starting inference with device: {device}")
+    
+    logging.info(f"Loading pretrained inference model from: {model_path}")
+    logging.info(f"Target underlying hardware device context: {device}")
 
     model_name = os.path.splitext(os.path.basename(model_path))[0]
     if output_dir is None:
@@ -30,7 +38,7 @@ def run_inference(
     model = HybridRetinexFuzzyModel()
 
     if not os.path.exists(model_path):
-        print(
+        logging.error(
             f"Error Context: Target compiled PyTorch weights file '{model_path}' missing."
         )
         return
@@ -41,29 +49,31 @@ def run_inference(
     model.to(device)
     model.eval()
 
-    print(f"Querying inputs from {csv_path}...")
+    logging.info(f"Querying inputs from {csv_path}...")
     df = pd.read_csv(csv_path)
 
     if image_col not in df.columns or scale_col not in df.columns:
-        print(
+        logging.error(
             f"Error Context: Required positional columns '{image_col}' or '{scale_col}' unavailable."
         )
-        print(f"Available structural DataFrame keys: {df.columns.tolist()}")
+        logging.error(f"Available structural DataFrame keys: {df.columns.tolist()}")
         return
 
     if max_samples > 0:
         df = df.head(max_samples)
 
-    print(f"Commencing isolated image generation. Emitting natively to: {output_dir}/")
+    logging.info(f"Commencing isolated image generation. Emitting natively to: {output_dir}/")
 
     count = 0
+    infer_start_time = time.time()
+
     with torch.no_grad():
         for idx, row in df.iterrows():
             img_path = str(row[image_col])
             f_scale = float(row[scale_col])
 
             if not os.path.exists(img_path):
-                print(
+                logging.warning(
                     f"Notice: Broken Image URL Context at {img_path}, skipping sample automatically."
                 )
                 continue
@@ -101,12 +111,15 @@ def run_inference(
 
             count += 1
             if count % 10 == 0:
-                print(
-                    f"Generated successfully isolated frames: {count}/{len(df)} ...",
-                    end="\r",
-                )
+                logging.info(f"Generated successfully isolated frames: {count}/{len(df)} ...")
 
-    print(
+    infer_end_time = time.time()
+    infer_duration = infer_end_time - infer_start_time
+    avg_img_time = infer_duration / count if count > 0 else 0
+    logging.info(f"Total inference completed in {infer_duration:.2f} seconds")
+    logging.info(f"Average time per image: {avg_img_time:.2f} seconds")
+    
+    logging.info(
         f"\nGenerative Image Evaluation Complete. Total mapping output ({count} images) validated safely at context: {output_dir}"
     )
 
