@@ -4,6 +4,8 @@ This repository implements two advanced PyTorch-based neural network pipelines d
 
 ### Pre-trained model weights
 
+To run inference on the proposed models, download the pre-trained model weights to `./models/` or train your own on your own dataset
+
 You can download our pre-trained model weights to use in testing from:
 - [DeepLPF weights](https://drive.google.com/file/d/1jHoWKzvn4XPR-o4hmhq_G45eKlEbC57r/view?usp=sharing)
 - Retinex-Fuzzy-CNN WIP
