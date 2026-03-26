@@ -2,6 +2,12 @@
 
 This repository implements two advanced PyTorch-based neural network pipelines designed to automatically restore poorly lit, color-cast, and low-contrast medical imagery back to uniform, optimal diagnostic lighting conditions. By conditioning reconstructions directly on Fitzpatrick skin type scalars, these architectures effectively correct visual acquisition biases.
 
+### Pre-trained model weights
+
+You can download our pre-trained model weights to use in testing from:
+- [DeepLPF weights](https://drive.google.com/file/d/1jHoWKzvn4XPR-o4hmhq_G45eKlEbC57r/view?usp=sharing)
+- Retinex-Fuzzy-CNN WIP
+
 ## 1. Dataset Used
 **Dataset:** Fitzpatrick17k Dataset
 The dataset comprises roughly 17,000 high-quality medical images annotated with the Fitzpatrick skin-type scale ranging from 1 to 6. The original, well-lit Fitzpatrick imagery acts as our Ground Truth ($Y$) labels during model training.
