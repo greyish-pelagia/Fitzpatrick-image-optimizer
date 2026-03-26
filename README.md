@@ -2,6 +2,29 @@
 
 This repository implements two advanced PyTorch-based neural network pipelines designed to automatically restore poorly lit, color-cast, and low-contrast medical imagery back to uniform, optimal diagnostic lighting conditions. By conditioning reconstructions directly on Fitzpatrick skin type scalars, these architectures effectively correct visual acquisition biases.
 
+## Results showcase
+
+![Fitzpatric-image-optimizer results](comparison_grid.png)
+
+#### DeepLPF evaluation metrics
+
+- Total Test Samples Validated : 5000
+- Mean Absolute Error (L1)     : 0.02464 (lower is better)
+- Mean Squared Error (MSE)     : 0.00118 (lower is better)
+- Peak Signal-Noise (PSNR)     : 29.30 dB (higher is better)
+- Structural Similarity (SSIM) : 0.9593 (max 1.0, higher is better)
+- Average preprocessing time per image: 0.27 seconds
+
+#### Retinex-Fuzzy-CNN evaluation metrics
+
+- Total Test Samples Validated : 5000
+- Mean Absolute Error (L1)     : 0.07747 (lower is better)
+- Mean Squared Error (MSE)     : 0.01013 (lower is better)
+- Peak Signal-Noise (PSNR)     : 19.96 dB (higher is better)
+- Structural Similarity (SSIM) : 0.9277 (max 1.0, higher is better)
+- Average preprocessing time per image: 0.31 seconds
+
+
 ### Pre-trained model weights
 
 To run inference on the proposed models, download the pre-trained model weights to `./models/` or train your own on your own dataset

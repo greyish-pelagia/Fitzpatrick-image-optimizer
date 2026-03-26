@@ -12,6 +12,7 @@ wheels/
 # Datasets
 data/images/*
 data/training_images/*
+data/cutom/*
 
 # Models
 models/*
