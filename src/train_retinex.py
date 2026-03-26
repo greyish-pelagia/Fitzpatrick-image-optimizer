@@ -247,6 +247,7 @@ def train_hybrid_pipeline(csv_path, max_samples=None, epochs=10, batch_size=4, l
     """
     Initiates isolated learning infrastructure naturally targeting Pipeline 2 logical operations robustly securely appropriately.
     """
+    os.makedirs("models", exist_ok=True)
     print(f"Loading dataset from {csv_path} with max_samples={max_samples}")
     dataset = FitzpatrickDataset(csv_path, max_samples=max_samples)
 
@@ -309,7 +310,9 @@ def train_hybrid_pipeline(csv_path, max_samples=None, epochs=10, batch_size=4, l
         avg_loss = total_loss / len(dataloader)
         print(f"--- Epoch {epoch} Average End-to-End Loss: {avg_loss:.4f} ---")
 
-    os.makedirs("models", exist_ok=True)
+        # Save checkpoint after every epoch
+        torch.save(model.state_dict(), f"models/retinex_epoch_{epoch}.pth")
+
     model_save_path = "models/retinex.pth"
     torch.save(model.state_dict(), model_save_path)
     print(f"Model Training Successfully Concluded. Model saved to {model_save_path}")
