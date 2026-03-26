@@ -1,6 +1,6 @@
 ### The Synthetic Degradation Pipeline
 
-You will take your original, well-lit Fitzpatrick17k images (treating them as your "Ground Truth" $Y$) and pass them through a randomized degradation function to create the input $X$.
+Take your original, well-lit Fitzpatrick17k images (treating them as your "Ground Truth" $Y$) and pass them through a randomized degradation function to create the input $X$.
 
 **1. Random Gamma Shift (Simulating over/underexposure)**
 * **Method:** Apply a power-law transformation.
