@@ -72,11 +72,7 @@ def run_inference(
             if img_bgr is None:
                 continue
 
-            
-
             orig_h, orig_w = img_bgr.shape[:2]
-
-            
 
             img_bgr = cv2.resize(img_bgr, (256, 256))
             img_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
@@ -96,8 +92,6 @@ def run_inference(
 
             out_rgb = (out_tensor.transpose((1, 2, 0)) * 255.0).astype(np.uint8)
             out_bgr = cv2.cvtColor(out_rgb, cv2.COLOR_RGB2BGR)
-            
-            
 
             out_bgr = cv2.resize(out_bgr, (orig_w, orig_h))
 

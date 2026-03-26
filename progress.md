@@ -59,12 +59,12 @@ uv run python src/infer_deeplpf.py --model_path models/deeplpf.pth --csv_path da
 You can deploy it using the equivalent parameter arguments exactly like your existing DeepLPF models safely:
 
 ```bash
-uv run python src/train_hybrid.py --scale_dataset 100 --epochs 5 --batch_size 4
+uv run python src/train_retinex.py --scale_dataset 100 --epochs 5 --batch_size 4
 ```
 
 **Command mapping for full training capability:**
 ```bash
-uv run python src/train_hybrid.py --scale_dataset 0 --epochs 50 --batch_size 32
+uv run python src/train_retinex.py --scale_dataset 0 --epochs 50 --batch_size 32
 ```
 
 **Run trained model evaluation:**

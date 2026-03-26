@@ -119,7 +119,9 @@ def evaluate_model(model_path, csv_path, num_samples, batch_size):
     print("=" * 55)
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Evaluate PyTorch Hybrid Retinex Pipeline")
+    parser = argparse.ArgumentParser(
+        description="Evaluate PyTorch Hybrid Retinex Pipeline"
+    )
     parser.add_argument(
         "--model_path",
         type=str,

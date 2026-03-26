@@ -26,7 +26,6 @@ class FiLMLayer(nn.Module):
 
     def __init__(self, num_features):
         super(FiLMLayer, self).__init__()
-        
 
         self.mlp = nn.Sequential(
             nn.Linear(1, num_features),
@@ -54,31 +53,54 @@ class RetinexUNet(nn.Module):
 
     def __init__(self):
         super(RetinexUNet, self).__init__()
-        
 
-        self.enc1 = nn.Sequential(nn.Conv2d(3, 32, 3, padding=1), nn.ReLU(), nn.Conv2d(32, 32, 3, padding=1), nn.ReLU())
-        self.enc2 = nn.Sequential(nn.Conv2d(32, 64, 3, padding=1, stride=2), nn.ReLU(), nn.Conv2d(64, 64, 3, padding=1), nn.ReLU())
-        self.enc3 = nn.Sequential(nn.Conv2d(64, 128, 3, padding=1, stride=2), nn.ReLU(), nn.Conv2d(128, 128, 3, padding=1), nn.ReLU())
+        self.enc1 = nn.Sequential(
+            nn.Conv2d(3, 32, 3, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(32, 32, 3, padding=1),
+            nn.ReLU(),
+        )
+        self.enc2 = nn.Sequential(
+            nn.Conv2d(32, 64, 3, padding=1, stride=2),
+            nn.ReLU(),
+            nn.Conv2d(64, 64, 3, padding=1),
+            nn.ReLU(),
+        )
+        self.enc3 = nn.Sequential(
+            nn.Conv2d(64, 128, 3, padding=1, stride=2),
+            nn.ReLU(),
+            nn.Conv2d(128, 128, 3, padding=1),
+            nn.ReLU(),
+        )
 
-        
-
-        self.bottleneck = nn.Sequential(nn.Conv2d(128, 256, 3, padding=1, stride=2), nn.ReLU())
+        self.bottleneck = nn.Sequential(
+            nn.Conv2d(128, 256, 3, padding=1, stride=2), nn.ReLU()
+        )
         self.film = FiLMLayer(256)
 
-        
-
         self.up3 = nn.ConvTranspose2d(256, 128, 2, stride=2)
-        self.dec3 = nn.Sequential(nn.Conv2d(256, 128, 3, padding=1), nn.ReLU(), nn.Conv2d(128, 128, 3, padding=1), nn.ReLU())
+        self.dec3 = nn.Sequential(
+            nn.Conv2d(256, 128, 3, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(128, 128, 3, padding=1),
+            nn.ReLU(),
+        )
 
         self.up2 = nn.ConvTranspose2d(128, 64, 2, stride=2)
-        self.dec2 = nn.Sequential(nn.Conv2d(128, 64, 3, padding=1), nn.ReLU(), nn.Conv2d(64, 64, 3, padding=1), nn.ReLU())
+        self.dec2 = nn.Sequential(
+            nn.Conv2d(128, 64, 3, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(64, 64, 3, padding=1),
+            nn.ReLU(),
+        )
 
         self.up1 = nn.ConvTranspose2d(64, 32, 2, stride=2)
-        self.dec1 = nn.Sequential(nn.Conv2d(64, 32, 3, padding=1), nn.ReLU(), nn.Conv2d(32, 32, 3, padding=1), nn.ReLU())
-
-        
-
-        
+        self.dec1 = nn.Sequential(
+            nn.Conv2d(64, 32, 3, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(32, 32, 3, padding=1),
+            nn.ReLU(),
+        )
 
         self.out_L = nn.Conv2d(32, 1, 1)
         self.out_R = nn.Conv2d(32, 3, 1)
@@ -119,18 +141,17 @@ class DeterministicCDH(nn.Module):
 
     def __init__(self):
         super(DeterministicCDH, self).__init__()
-        
-        
 
         self.extractor = nn.Conv2d(3, 6, kernel_size=3, padding=1, bias=False, groups=3)
-        
-        
 
-        sobel_x = torch.tensor([[-1., 0., 1.], [-2., 0., 2.], [-1., 0., 1.]], dtype=torch.float32)
-        sobel_y = torch.tensor([[-1., -2., -1.], [0., 0., 0.], [1., 2., 1.]], dtype=torch.float32)
-        
+        sobel_x = torch.tensor(
+            [[-1.0, 0.0, 1.0], [-2.0, 0.0, 2.0], [-1.0, 0.0, 1.0]], dtype=torch.float32
+        )
+        sobel_y = torch.tensor(
+            [[-1.0, -2.0, -1.0], [0.0, 0.0, 0.0], [1.0, 2.0, 1.0]], dtype=torch.float32
+        )
+
         weights = torch.zeros(6, 1, 3, 3)
-        
 
         weights[0, 0, :, :] = sobel_x
         weights[1, 0, :, :] = sobel_y
@@ -138,8 +159,6 @@ class DeterministicCDH(nn.Module):
         weights[3, 0, :, :] = sobel_y
         weights[4, 0, :, :] = sobel_x
         weights[5, 0, :, :] = sobel_y
-        
-        
 
         self.extractor.weight = nn.Parameter(weights, requires_grad=False)
 
@@ -164,7 +183,7 @@ class FuzzyActivation(nn.Module):
         """
         Processes standard tensor inputs logically generating isolated output ranges precisely.
         """
-        return torch.exp(-torch.pow(x - self.c, 2) / (2 * (self.sigma ** 2)))
+        return torch.exp(-torch.pow(x - self.c, 2) / (2 * (self.sigma**2)))
 
 class FuzzyCNN(nn.Module):
     """
@@ -174,14 +193,13 @@ class FuzzyCNN(nn.Module):
 
     def __init__(self):
         super(FuzzyCNN, self).__init__()
-        
 
         self.conv1 = nn.Conv2d(12, 32, kernel_size=3, padding=1)
         self.fuzzy_act = FuzzyActivation(c=0.0, sigma=1.0)
-        
+
         self.conv2 = nn.Conv2d(32, 32, kernel_size=3, padding=1)
         self.relu2 = nn.ReLU()
-        
+
         self.out_conv = nn.Conv2d(32, 3, kernel_size=1)
 
     def forward(self, x_concat):
@@ -190,10 +208,10 @@ class FuzzyCNN(nn.Module):
         """
         f = self.conv1(x_concat)
         f = self.fuzzy_act(f)
-        
+
         f = self.conv2(f)
         f = self.relu2(f)
-        
+
         f = self.out_conv(f)
         return torch.sigmoid(f)
 
@@ -217,12 +235,13 @@ class HybridRetinexFuzzyModel(nn.Module):
         T_maps = self.stage2(R_adj)
         combined_features = torch.cat([R_adj, T_maps, x], dim=1)
         output = self.stage3(combined_features)
-        
+
         return output, L
 
 def tv_loss(img):
-    return torch.mean(torch.abs(img[:,:,:,:-1] - img[:,:,:,1:])) + \
-            torch.mean(torch.abs(img[:,:,:-1,:] - img[:,:,1:,:]))
+    return torch.mean(torch.abs(img[:, :, :, :-1] - img[:, :, :, 1:])) + torch.mean(
+        torch.abs(img[:, :, :-1, :] - img[:, :, 1:, :])
+    )
 
 def train_hybrid_pipeline(csv_path, max_samples=None, epochs=10, batch_size=4, lr=1e-4):
     """
@@ -242,12 +261,8 @@ def train_hybrid_pipeline(csv_path, max_samples=None, epochs=10, batch_size=4, l
     print(f"Initializing Context -> Using device: {device}")
     model = HybridRetinexFuzzyModel().to(device)
 
-    
-
     l1_loss_fn = nn.L1Loss()
     ssim_loss_fn = SSIMLoss().to(device)
-
-    
 
     optimizer = torch.optim.Adam(
         filter(lambda p: p.requires_grad, model.parameters()), lr=lr
@@ -300,7 +315,9 @@ def train_hybrid_pipeline(csv_path, max_samples=None, epochs=10, batch_size=4, l
     print(f"Model Training Successfully Concluded. Model saved to {model_save_path}")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Train Pipeline 2: Hybrid Retinex-Fuzzy-CNN Architecture")
+    parser = argparse.ArgumentParser(
+        description="Train Pipeline 2: Hybrid Retinex-Fuzzy-CNN Architecture"
+    )
 
     parser.add_argument(
         "--csv_path",
