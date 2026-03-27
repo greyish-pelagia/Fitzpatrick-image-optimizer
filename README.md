@@ -31,7 +31,7 @@ To run inference on the proposed models, download the pre-trained model weights 
 
 You can download our pre-trained model weights to use in testing from:
 - [DeepLPF weights](https://drive.google.com/file/d/1jHoWKzvn4XPR-o4hmhq_G45eKlEbC57r/view?usp=sharing)
-- Retinex-Fuzzy-CNN WIP
+- [Retinex-Fuzzy-CNN](https://drive.google.com/file/d/1zlCs7tr93TvBxbGWz7aaJE87zn8KFJBP/view?usp=sharing)
 
 ## 1. Dataset Used
 **Dataset:** Fitzpatrick17k Dataset
