@@ -10,6 +10,7 @@ from fitzpatrick_optimizer.config import get_device
 from fitzpatrick_optimizer.data import FitzpatrickImageDataset
 from fitzpatrick_optimizer.metrics import ssim_score
 from fitzpatrick_optimizer.models import (
+    IdentityBaseline,
     IlluminationGuidedUNet,
     ParameterConditionedResidualFilter,
 )
@@ -21,6 +22,8 @@ def create_model(model_name: str) -> nn.Module:
         return ParameterConditionedResidualFilter(pretrained=True)
     if model_name == "illumination-unet":
         return IlluminationGuidedUNet()
+    if model_name == "baseline":
+        return IdentityBaseline()
     raise ValueError(f"Unknown model: {model_name}")
 
 
