@@ -10,9 +10,9 @@ from fitzpatrick_optimizer.config import get_device
 from fitzpatrick_optimizer.data import FitzpatrickImageDataset
 from fitzpatrick_optimizer.metrics import ssim_score
 from fitzpatrick_optimizer.models import (
+    IdentityBaseline,
     IlluminationGuidedUNet,
     ParameterConditionedResidualFilter,
-    IdentityBaseline
 )
 from fitzpatrick_optimizer.randomness import seed_everything
 
