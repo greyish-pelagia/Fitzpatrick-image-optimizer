@@ -29,3 +29,6 @@ demo_assets/
 
 # Logs
 logs
+
+.vscode
+.pytest_cache
