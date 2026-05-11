@@ -54,3 +54,18 @@ def test_infer_cli_help_runs():
     assert result.returncode == 0
     assert "--model" in result.stdout
     assert "--output_dir" in result.stdout
+
+
+def test_unified_cli_help_lists_subcommands():
+    result = subprocess.run(
+        [sys.executable, "-m", "fitzpatrick_optimizer.cli", "--help"],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 0
+    assert "train" in result.stdout
+    assert "evaluate" in result.stdout
+    assert "infer" in result.stdout
+    assert "create-demo-data" in result.stdout
