@@ -1,13 +1,11 @@
 # Model Architecture Notes
 
-This document keeps the original project-facing names while mapping them to the current package names introduced during the portfolio-demo refactor.
-
 ## Name Mapping
 
-| Original name | Current package/model name | Python class | CLI model key |
-| --- | --- | --- | --- |
-| Parameter-Driven DeepLPF | Parameter-Conditioned Residual Filter | `ParameterConditionedResidualFilter` | `residual-filter` |
-| Hybrid Retinex-Fuzzy-CNN | Illumination-Guided U-Net | `IlluminationGuidedUNet` | `illumination-unet` |
+| Original name            | Current package/model name            | Python class                         | CLI model key       |
+| ------------------------ | ------------------------------------- | ------------------------------------ | ------------------- |
+| Parameter-Driven DeepLPF | Parameter-Conditioned Residual Filter | `ParameterConditionedResidualFilter` | `residual-filter`   |
+| Hybrid Retinex-Fuzzy-CNN | Illumination-Guided U-Net             | `IlluminationGuidedUNet`             | `illumination-unet` |
 
 The original names are retained for continuity with the project history. The current names are more precise about what the code implements.
 
@@ -30,7 +28,7 @@ The current `residual-filter` model is a DeepLPF-inspired architecture, not a fu
 3. **Parameter head**
    - The ResNet feature vector feeds a small MLP.
    - The MLP predicts 76 latent parameters.
-   - Those parameters are split into gradient-like, elliptical-like, and polynomial-like groups for compatibility with the earlier DeepLPF framing.
+   - Those parameters are split into gradient-like, elliptical-like, and polynomial-like groups for compatibility with the DeepLPF framing.
 
 4. **Image reconstruction**
    - The implementation applies a simplified differentiable residual transform:
@@ -41,20 +39,10 @@ The current `residual-filter` model is a DeepLPF-inspired architecture, not a fu
 
 ### Current commands
 
-Preferred package CLI:
-
 ```bash
 uv run fitzopt train --model residual-filter --csv_path data/labels.csv --max_samples 100 --epochs 1 --batch_size 8
 uv run fitzopt evaluate --model residual-filter --model_path models/residual-filter.pth --csv_path data/labels.csv --split test --metrics_json results/residual-filter-test.json
 uv run fitzopt infer --model residual-filter --model_path models/residual-filter.pth --csv_path data/labels.csv --output_dir results/residual-filter
-```
-
-Legacy wrapper commands still map to the same model:
-
-```bash
-uv run python src/train_deeplpf.py --scale_dataset 100 --epochs 1 --batch_size 8
-uv run python src/evaluate_deeplpf.py --model_path models/residual-filter.pth --csv_path data/labels.csv --split test --metrics_json results/residual-filter-test.json
-uv run python src/infer_deeplpf.py --model_path models/residual-filter.pth --csv_path data/labels.csv --output_dir results/residual-filter
 ```
 
 ## Pipeline 2: Hybrid Retinex-Fuzzy-CNN / Illumination-Guided U-Net
@@ -93,17 +81,9 @@ uv run fitzopt evaluate --model illumination-unet --model_path models/illuminati
 uv run fitzopt infer --model illumination-unet --model_path models/illumination-unet.pth --csv_path data/labels.csv --output_dir results/illumination-unet
 ```
 
-Legacy wrapper commands still map to the same model:
-
-```bash
-uv run python src/train_retinex.py --scale_dataset 100 --epochs 5 --batch_size 4
-uv run python src/evaluate_retinex.py --model_path models/illumination-unet.pth --csv_path data/labels.csv --split test --metrics_json results/illumination-unet-test.json
-uv run python src/infer_retinex.py --model_path models/illumination-unet.pth --csv_path data/labels.csv --output_dir results/illumination-unet
-```
-
 ## Evaluation Expectations
 
-Evaluation now uses deterministic train/validation/test split assignment when a CSV does not already contain a `split` column. Reports should include:
+Evaluation uses deterministic train/validation/test split assignment when a CSV does not already contain a `split` column. Reports should include:
 
 - model metrics grouped by Fitzpatrick scale,
 - identity-baseline metrics grouped by Fitzpatrick scale,
