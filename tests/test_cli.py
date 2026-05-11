@@ -1,4 +1,6 @@
 import importlib.metadata
+import subprocess
+import sys
 
 
 def test_package_imports():
@@ -12,3 +14,17 @@ def test_distribution_metadata_has_real_description():
 
     assert metadata["Name"] == "fitzpatrick-image-optimizer"
     assert "experimental" in metadata["Summary"].lower()
+
+
+def test_train_cli_help_runs():
+    result = subprocess.run(
+        [sys.executable, "-m", "fitzpatrick_optimizer.train", "--help"],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 0
+    assert "--model" in result.stdout
+    assert "residual-filter" in result.stdout
+    assert "illumination-unet" in result.stdout
