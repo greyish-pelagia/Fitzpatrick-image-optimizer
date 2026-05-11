@@ -15,7 +15,8 @@ The models were evaluated against an identity / no-op baseline, which returns th
 | Baseline                            |     0.14564 |     0.03204 |     15.16 |     0.8218 |
 | DeepLPF-inspired residual-filter    |     0.11832 |     0.02226 | **16.86** | **0.8701** |
 | FiLM-conditioned illumination U-Net | **0.11559** | **0.02197** |     16.74 |     0.8134 |
-*PSNR is averaged from batch-level PSNR values rather than recomputed from the final mean MSE. Because of that, method ranking may differ slightly between mean MSE and mean PSNR.*
+
+> *Note: PSNR is averaged from batch-level PSNR values rather than recomputed from the final mean MSE. Because of that, method ranking may differ slightly between mean MSE and mean PSNR.*
 
 The residual-filter model performs best overall, improving SSIM from 0.8218 to 0.8701 and worst-group SSIM from 0.8193 to 0.8679. The illumination U-Net reduces pixel-level error but underperforms the identity baseline on SSIM, so it is treated as an experimental architecture rather than the primary model.
 
