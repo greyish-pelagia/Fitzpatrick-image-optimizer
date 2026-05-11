@@ -1,6 +1,17 @@
-import numpy as np
-import pytest
+from pathlib import Path
 
+import cv2
+import numpy as np
+import pandas as pd
+import pytest
+import torch
+
+from fitzpatrick_optimizer.data import (
+    FitzpatrickImageDataset,
+    SyntheticDegradationConfig,
+    degrade_image,
+    validate_records,
+)
 from fitzpatrick_optimizer.imaging import normalize_fitzpatrick_scale, to_chw_float
 
 
@@ -28,21 +39,6 @@ def test_to_chw_float_converts_uint8_rgb_to_float_tensor_layout():
     assert result[0, 0, 0] == 0.0
     assert result[1, 0, 0] == pytest.approx(128 / 255)
     assert result[2, 0, 0] == 1.0
-
-
-from pathlib import Path
-
-import cv2
-import pandas as pd
-import torch
-
-from fitzpatrick_optimizer.data import (
-    FitzpatrickImageDataset,
-    SyntheticDegradationConfig,
-    degrade_image,
-    validate_records,
-)
-
 
 def _write_rgb(path: Path, color: tuple[int, int, int]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)

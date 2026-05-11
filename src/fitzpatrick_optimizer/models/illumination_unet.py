@@ -67,7 +67,9 @@ class IlluminationUNetBackbone(nn.Module):
         self.out_l = nn.Conv2d(32, 1, 1)
         self.out_r = nn.Conv2d(32, 3, 1)
 
-    def forward(self, x: torch.Tensor, s: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+    def forward(
+        self, x: torch.Tensor, s: torch.Tensor
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         e1 = self.enc1(x)
         e2 = self.enc2(e1)
         e3 = self.enc3(e2)
@@ -133,7 +135,9 @@ class IlluminationGuidedUNet(nn.Module):
         self.texture_extractor = SobelTextureExtractor()
         self.refinement = RefinementCNN()
 
-    def forward(self, x: torch.Tensor, s: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+    def forward(
+        self, x: torch.Tensor, s: torch.Tensor
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         illumination, reflectance = self.illumination_backbone(x, s)
         texture = self.texture_extractor(reflectance)
         output = self.refinement(torch.cat([reflectance, texture, x], dim=1))

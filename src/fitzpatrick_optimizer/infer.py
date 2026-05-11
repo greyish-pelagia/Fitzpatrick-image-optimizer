@@ -36,7 +36,9 @@ def run_inference(args: argparse.Namespace) -> int:
             image_path = Path(str(row[args.image_col]))
             image = read_rgb_image(image_path)
             resized = resize_rgb(image, (args.image_size, args.image_size))
-            image_tensor = torch.from_numpy(to_chw_float(resized)).unsqueeze(0).to(device)
+            image_tensor = (
+                torch.from_numpy(to_chw_float(resized)).unsqueeze(0).to(device)
+            )
             scale = torch.tensor(
                 [[normalize_fitzpatrick_scale(row[args.scale_col])]],
                 dtype=torch.float32,
@@ -56,7 +58,9 @@ def run_inference(args: argparse.Namespace) -> int:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Run model inference over a CSV of images")
+    parser = argparse.ArgumentParser(
+        description="Run model inference over a CSV of images"
+    )
     parser.add_argument(
         "--model",
         choices=["residual-filter", "illumination-unet"],

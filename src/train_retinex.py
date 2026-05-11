@@ -2,7 +2,6 @@ import sys
 
 from fitzpatrick_optimizer.train import main
 
-
 if __name__ == "__main__":
     argv = ["--model", "illumination-unet", *sys.argv[1:]]
     if "--scale_dataset" in argv:

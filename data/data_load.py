@@ -1,5 +1,6 @@
-import pandas as pd
 import os
+
+import pandas as pd
 
 df = pd.read_csv(
     "https://raw.githubusercontent.com/mattgroh/fitzpatrick17k/refs/heads/main/fitzpatrick17k.csv"

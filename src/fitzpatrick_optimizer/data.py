@@ -101,7 +101,9 @@ class FitzpatrickImageDataset(Dataset):
     def __len__(self) -> int:
         return len(self.df)
 
-    def __getitem__(self, index: int) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+    def __getitem__(
+        self, index: int
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         row = self.df.iloc[index]
         input_rgb = resize_rgb(read_rgb_image(row["training_image"]), self.image_size)
         target_rgb = resize_rgb(
