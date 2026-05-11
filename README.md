@@ -1,29 +1,36 @@
 # Fitzpatrick Image Optimizer
 
-This repository implements two advanced PyTorch-based neural network pipelines designed to automatically restore poorly lit, color-cast, and low-contrast medical imagery back to uniform, optimal diagnostic lighting conditions. By conditioning reconstructions directly on Fitzpatrick skin type scalars, these architectures effectively correct visual acquisition biases.
+Experimental PyTorch project for Fitzpatrick-conditioned illumination normalization on dermatology-style images. The repository demonstrates an end-to-end ML workflow: synthetic degradation, model training, holdout evaluation, grouped metrics, inference, and reproducible demo commands.
 
-## Results showcase
+![Example comparison grid](comparison_grid.png)
 
-![Fitzpatric-image-optimizer results](comparison_grid.png)
+## What This Project Shows
 
-#### DeepLPF evaluation metrics
+- Package-quality PyTorch code with train/evaluate/infer CLIs.
+- Deterministic synthetic degradation for paired image restoration experiments.
+- Two model families:
+  - `residual-filter`: a ResNet-conditioned residual image filter inspired by DeepLPF-style parameter prediction.
+  - `illumination-unet`: a FiLM-conditioned U-Net with Sobel texture features and refinement CNN.
+- Holdout evaluation with identity baseline metrics grouped by Fitzpatrick scale.
+- A generated tiny demo dataset so the project runs from a fresh clone.
 
-- Total Test Samples Validated : 5000
-- Mean Absolute Error (L1)     : 0.02464 (lower is better)
-- Mean Squared Error (MSE)     : 0.00118 (lower is better)
-- Peak Signal-Noise (PSNR)     : 29.30 dB (higher is better)
-- Structural Similarity (SSIM) : 0.9593 (max 1.0, higher is better)
-- Average preprocessing time per image: 0.27 seconds
+## Non-Clinical Scope
 
-#### Retinex-Fuzzy-CNN evaluation metrics
+This is not a diagnostic system and is not validated for clinical use. The project explores image normalization under synthetic lighting shifts. Claims about fairness, diagnostic accuracy, or medical utility require separate downstream experiments and clinical review.
 
-- Total Test Samples Validated : 5000
-- Mean Absolute Error (L1)     : 0.07747 (lower is better)
-- Mean Squared Error (MSE)     : 0.01013 (lower is better)
-- Peak Signal-Noise (PSNR)     : 19.96 dB (higher is better)
-- Structural Similarity (SSIM) : 0.9277 (max 1.0, higher is better)
-- Average preprocessing time per image: 0.31 seconds
+## Quickstart
 
+```bash
+uv sync --extra dev
+uv run fitzopt create-demo-data --output_dir demo_assets --count 6
+uv run fitzopt train --model residual-filter --csv_path demo_assets/labels.csv --max_samples 6 --epochs 1 --batch_size 2 --output_dir models/demo
+uv run fitzopt evaluate --model residual-filter --model_path models/demo/residual-filter.pth --csv_path demo_assets/labels.csv --split test --metrics_json results/demo-metrics.json --max_samples 2
+uv run fitzopt infer --model residual-filter --model_path models/demo/residual-filter.pth --csv_path demo_assets/labels.csv --output_dir results/demo-inference --max_samples 2
+```
+
+## Dataset
+
+The full experiments use Fitzpatrick17k metadata and locally downloaded images. The repository does not vendor the full image dataset. Use `data/training_preprocess.py` to create synthetic pairs after downloading source images.
 
 ### Pre-trained model weights
 
@@ -97,41 +104,33 @@ uv run python src/train_deeplpf.py --scale_dataset 0 --epochs 50 --batch_size 32
 uv run python src/evaluate_deeplpf.py --num_samples 100 --batch_size 8
 ```
 
-*Run inference on new images:*
+- [residual-filter weights](https://drive.google.com/file/d/1jHoWKzvn4XPR-o4hmhq_G45eKlEbC57r/view?usp=sharing)
+- [illumination-unet weights](https://drive.google.com/file/d/1zlCs7tr93TvBxbGWz7aaJE87zn8KFJBP/view?usp=sharing)
+
+## Evaluation
+
+Metrics are reported on deterministic train/validation/test splits. Public reports must include:
+
+- L1
+- MSE
+- PSNR
+- SSIM
+- identity baseline comparison
+- grouped metrics by Fitzpatrick scale
+
+See `docs/results-schema.md` for the JSON report format.
+
+## Limitations
+
+- Synthetic degradation does not cover all real clinical acquisition artifacts.
+- Fitzpatrick labels are used as conditioning metadata, not as a guarantee of fairness.
+- The residual-filter model is DeepLPF-inspired but does not implement the full DeepLPF filter family.
+- The illumination-unet model uses Sobel texture features, not a full color-difference histogram method.
+
+## Development
+
 ```bash
-uv run python src/infer_deeplpf.py --model_path models/deeplpf.pth --csv_path data/labels.csv
+uv run pytest
+uv run ruff check .
+python -m compileall src data
 ```
-*(Optional Inference Parameters: `--max_samples 5` to limit processing, `--output_dir output` to specify the save location).*
-
----
-
-### Architecture 2: Hybrid Retinex-Fuzzy-CNN
-
-**Design Implementations Included:**
-1. **Retinex FiLM U-Net (Stage 1):** Built the complete structural encoder-decoder U-Net, including isolating the conditional bottleneck via a **Featurewise Linear Modulation (FiLM)** MLP block mapping `S` into the dynamic `gamma` and `beta` tensor adjustments to reconstruct the Illumination ($L$) and Reflectance ($R$) layers.
-2. **Deterministic CDH Extractor (Stage 2):** Engineered the explicit PyTorch convolutional block with fixed, mathematically defined static Sobel-driven edge parameters running without trainable tracking (`requires_grad=False`).
-3. **Fuzzy-CNN Mapping (Stage 3):** Constructed the parameter-free Fuzzy Membership logic, replacing standard ReLUs on a shallow CNN to handle residual translation outputs explicitly.
-4. **Matched Modularity:** Carries over the exact documentation styles, CLI configuration logic, SSIM constraints, and automated hardware scaling parameters found in the DeepLPF pipeline.
-
-**Execution Commands:**
-
-*Quick trial training:*
-```bash
-uv run python src/train_retinex.py --scale_dataset 100 --epochs 5 --batch_size 4
-```
-
-*Full training capability:*
-```bash
-uv run python src/train_retinex.py --scale_dataset 0 --epochs 50 --batch_size 32
-```
-
-*Run trained model evaluation:*
-```bash
-uv run python src/evaluate_retinex.py --num_samples 100 --batch_size 8
-```
-
-*Run inference on new images:*
-```bash
-uv run python src/infer_retinex.py --model_path models/hybrid_retinex.pth --csv_path data/labels.csv
-```
-*(Optional Inference Parameters: `--max_samples 5` to limit processing, `--output_dir output` to specify the save location).*

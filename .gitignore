@@ -19,6 +19,7 @@ models/*
 
 # Results
 results/*
+demo_assets/
 
 # MacOs
 .DS_Store

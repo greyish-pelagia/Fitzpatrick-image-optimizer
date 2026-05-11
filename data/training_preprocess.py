@@ -1,153 +1,65 @@
-import os
+import argparse
+from pathlib import Path
+
 import cv2
-import random
-import numpy as np
 import pandas as pd
-from typing import Tuple
 
-
-def random_gamma_shift(
-    image: np.ndarray, gamma_range: Tuple[float, float] = (0.4, 2.5)
-) -> np.ndarray:
-    """
-    Apply a power-law transformation (Gamma Shift).
-    X = Y^gamma
-    """
-    gamma = random.uniform(gamma_range[0], gamma_range[1])
-
-    table = np.array([((i / 255.0) ** gamma) * 255 for i in np.arange(0, 256)]).astype(
-        "uint8"
-    )
-    return cv2.LUT(image, table)
-
-
-def random_color_cast(
-    image: np.ndarray, weight_range: Tuple[float, float] = (0.75, 1.25)
-) -> np.ndarray:
-    """
-    Multiply individual RGB channels by independent random scalars.
-    """
-
-    b_weight = random.uniform(weight_range[0], weight_range[1])
-    g_weight = random.uniform(weight_range[0], weight_range[1])
-    r_weight = random.uniform(weight_range[0], weight_range[1])
-
-    img_float = image.astype(np.float32)
-    img_float[:, :, 0] *= b_weight
-    img_float[:, :, 1] *= g_weight
-    img_float[:, :, 2] *= r_weight
-
-    return np.clip(img_float, 0, 255).astype(np.uint8)
-
-
-def histogram_denormalization(
-    image: np.ndarray, alpha_range: Tuple[float, float] = (0.5, 0.8)
-) -> np.ndarray:
-    """
-    Compress the dynamic range to simulate low contrast.
-    X = Y * alpha + beta
-    """
-    alpha = random.uniform(alpha_range[0], alpha_range[1])
-
-    max_beta = 255 * (1.0 - alpha)
-    beta = random.uniform(0, max_beta)
-
-    img_float = image.astype(np.float32)
-    img_float = img_float * alpha + beta
-
-    return np.clip(img_float, 0, 255).astype(np.uint8)
-
-
-def degrade_image(image: np.ndarray) -> np.ndarray:
-    """
-    Pass the well-lit Ground Truth image through the randomized degradation function.
-    """
-    img = random_gamma_shift(image)
-    img = random_color_cast(img)
-    img = histogram_denormalization(img)
-    return img
+from fitzpatrick_optimizer.data import SyntheticDegradationConfig, degrade_image
 
 
 def preprocess_dataset(
-    csv_path: str, images_dir: str, output_images_dir: str, output_csv_path: str
-):
-    print(f"Loading metadata from {csv_path}...")
+    csv_path: str,
+    images_dir: str,
+    output_images_dir: str,
+    output_csv_path: str,
+    seed: int = 42,
+) -> None:
     df = pd.read_csv(csv_path)
+    output_dir = Path(output_images_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    records: list[dict[str, object]] = []
 
-    os.makedirs(output_images_dir, exist_ok=True)
-
-    records = []
-    total = len(df)
-
-    print(f"Found {total} records. Starting preprocessing...")
-
-    for idx, row in df.iterrows():
-        if idx % 100 == 0 and idx > 0:
-            print(f"Processed {idx}/{total} records...")
-
-        md5hash = row["md5hash"]
-        fitzpatrick_scale = row["fitzpatrick_scale"]
-
-        gt_filename = f"{md5hash}.jpg"
-        gt_image_path = os.path.join(images_dir, gt_filename)
-
-        if not os.path.exists(gt_image_path):
+    for row_index, row in df.iterrows():
+        image_path = Path(images_dir) / f"{row['md5hash']}.jpg"
+        if not image_path.exists():
             continue
-
-        img = cv2.imread(gt_image_path)
-        if img is None:
+        image = cv2.imread(str(image_path), cv2.IMREAD_COLOR)
+        if image is None:
             continue
-
-        degraded_img = degrade_image(img)
-
-        training_filename = f"train_{md5hash}.jpg"
-        training_image_path = os.path.join(output_images_dir, training_filename)
-        cv2.imwrite(training_image_path, degraded_img)
-
+        degraded = degrade_image(
+            image,
+            SyntheticDegradationConfig(seed=seed + int(row_index)),
+        )
+        training_path = output_dir / f"train_{row['md5hash']}.jpg"
+        cv2.imwrite(str(training_path), degraded)
         records.append(
             {
-                "training_image": training_image_path,
-                "ground_truth_image": gt_image_path,
-                "Fitzpatrick scale": fitzpatrick_scale,
+                "training_image": str(training_path),
+                "ground_truth_image": str(image_path),
+                "Fitzpatrick scale": int(row["fitzpatrick_scale"]),
             }
         )
 
-    out_df = pd.DataFrame(records)
-    out_df.to_csv(output_csv_path, index=False)
-    print(f"Done! Preprocessed {len(records)} images in total.")
-    print(f"Created new labels file at: {output_csv_path}")
+    pd.DataFrame(records).to_csv(output_csv_path, index=False)
+    print(f"Created {len(records)} synthetic pairs at {output_csv_path}")
 
 
-if __name__ == "__main__":
-    import argparse
-
-    parser = argparse.ArgumentParser(
-        description="Preprocess Fitzpatrick17k Images Pipeline"
-    )
-    parser.add_argument(
-        "--csv_path",
-        type=str,
-        default="data/fitzpatrick17k.csv",
-        help="Original CSV path",
-    )
-    parser.add_argument(
-        "--images_dir", type=str, default="data/images", help="Original images dir"
-    )
-    parser.add_argument(
-        "--output_images_dir",
-        type=str,
-        default="data/training_images",
-        help="Output images dir",
-    )
-    parser.add_argument(
-        "--output_csv_path", type=str, default="data/labels.csv", help="Output CSV path"
-    )
-
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Generate synthetic training pairs")
+    parser.add_argument("--csv_path", default="data/fitzpatrick17k.csv")
+    parser.add_argument("--images_dir", default="data/images")
+    parser.add_argument("--output_images_dir", default="data/training_images")
+    parser.add_argument("--output_csv_path", default="data/labels.csv")
+    parser.add_argument("--seed", type=int, default=42)
     args = parser.parse_args()
-
     preprocess_dataset(
         csv_path=args.csv_path,
         images_dir=args.images_dir,
         output_images_dir=args.output_images_dir,
         output_csv_path=args.output_csv_path,
+        seed=args.seed,
     )
+
+
+if __name__ == "__main__":
+    main()
