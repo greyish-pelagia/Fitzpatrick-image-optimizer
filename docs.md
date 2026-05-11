@@ -1,88 +1,124 @@
-## Pipeline 1: Parameter-Driven DeepLPF (Simple)
+# Model Architecture Notes
 
-### **Features included**
-1. **Standardized DeepLPF Architecture:**
-   - Modified the standard loaded `ResNet50` architecture backend to accept the expanded $4 \times H \times W$ tensor format securely (3 for visual RGB bands, and an injected feature layer mapping for the `s_norm` mapped representation).
-   - Dropped the Standard ImageNet classifier and added a custom MLP output head specifically configured for capturing 76 variables (Graduated, Elliptical, and Polynomial control).
-   - Applied differentiable mathematical parameter implementations equivalent to the requested synthetic exposure filters without breaking the backward PyTorch `autograd` flow.
+This document keeps the original project-facing names while mapping them to the current package names introduced during the portfolio-demo refactor.
 
-2. **Dataset & Training Loop Parameters:**
-   - Command line arguments to dictate `--epochs` for quick runs natively.
-   - Command line arguments to handle `--scale_dataset <int>` to sample only chunks of data (excellent for quick debugging before full batch rendering runs). Simply use `0` to run across the full ~16k training examples natively.
+## Name Mapping
 
-3. **Fallback Infrastructure:**
-   - Fully utilizes `cuda`, falls back to Apple Silicon `mps`, and defaults backwards directly onto the standard `cpu` without errors. *(I initiated an automated short 8 sample run test on it in the background, and it verified perfectly securely scaling onto `mps` context properly).*
+| Original name | Current package/model name | Python class | CLI model key |
+| --- | --- | --- | --- |
+| Parameter-Driven DeepLPF | Parameter-Conditioned Residual Filter | `ParameterConditionedResidualFilter` | `residual-filter` |
+| Hybrid Retinex-Fuzzy-CNN | Illumination-Guided U-Net | `IlluminationGuidedUNet` | `illumination-unet` |
 
-### **How to run the pipeline**
+The original names are retained for continuity with the project history. The current names are more precise about what the code implements.
 
-**Command mapping for a quick trial (e.g. 1 epoch over a small subset of 100 images):**
+## Pipeline 1: Parameter-Driven DeepLPF / Parameter-Conditioned Residual Filter
+
+The current `residual-filter` model is a DeepLPF-inspired architecture, not a full implementation of the original DeepLPF filter family.
+
+### Architecture
+
+1. **Input conditioning**
+   - Input image tensor: `3 x H x W`.
+   - Fitzpatrick scale is normalized from `[1, 6]` to `[0, 1]`.
+   - A learned scalar embedding is spatially expanded and concatenated with the RGB image, producing a `4 x H x W` input tensor.
+
+2. **Feature extractor**
+   - Uses a ResNet50 backbone.
+   - The first convolution is adapted from 3 input channels to 4 input channels.
+   - When pretrained weights are enabled, RGB weights are copied from the original ResNet50 stem and the fourth channel is initialized from the mean RGB stem weight.
+
+3. **Parameter head**
+   - The ResNet feature vector feeds a small MLP.
+   - The MLP predicts 76 latent parameters.
+   - Those parameters are split into gradient-like, elliptical-like, and polynomial-like groups for compatibility with the earlier DeepLPF framing.
+
+4. **Image reconstruction**
+   - The implementation applies a simplified differentiable residual transform:
+     - polynomial terms use the first RGB polynomial coefficients,
+     - gradient and elliptical groups influence global scale and shift terms,
+     - the residual is added to the original input and clamped to `[0, 1]`.
+   - This preserves autograd and keeps the module trainable end to end, but it should be described as a residual-filter baseline rather than exact DeepLPF.
+
+### Current commands
+
+Preferred package CLI:
+
+```bash
+uv run fitzopt train --model residual-filter --csv_path data/labels.csv --max_samples 100 --epochs 1 --batch_size 8
+uv run fitzopt evaluate --model residual-filter --model_path models/residual-filter.pth --csv_path data/labels.csv --split test --metrics_json results/residual-filter-test.json
+uv run fitzopt infer --model residual-filter --model_path models/residual-filter.pth --csv_path data/labels.csv --output_dir results/residual-filter
+```
+
+Legacy wrapper commands still map to the same model:
+
 ```bash
 uv run python src/train_deeplpf.py --scale_dataset 100 --epochs 1 --batch_size 8
+uv run python src/evaluate_deeplpf.py --model_path models/residual-filter.pth --csv_path data/labels.csv --split test --metrics_json results/residual-filter-test.json
+uv run python src/infer_deeplpf.py --model_path models/residual-filter.pth --csv_path data/labels.csv --output_dir results/residual-filter
 ```
 
-**Command mapping for full training capability:**
+## Pipeline 2: Hybrid Retinex-Fuzzy-CNN / Illumination-Guided U-Net
+
+The current `illumination-unet` model keeps the spirit of the original Retinex/Fuzzy-CNN idea, but the code is now named around the concrete implementation: FiLM-conditioned U-Net, Sobel texture features, and a refinement CNN.
+
+### Architecture
+
+1. **Illumination-guided U-Net**
+   - A U-Net-style encoder/decoder consumes the RGB image.
+   - Fitzpatrick conditioning is injected at the bottleneck through a FiLM layer.
+   - The U-Net predicts:
+     - a single-channel illumination map,
+     - a three-channel reflectance-like map.
+
+2. **Sobel texture extractor**
+   - The previous "CDH" wording has been narrowed.
+   - The current implementation uses fixed, non-trainable Sobel filters grouped per RGB channel.
+   - These filters produce six texture/edge maps from the reflectance-like output.
+
+3. **Refinement CNN**
+   - The refinement stage concatenates:
+     - reflectance-like output,
+     - Sobel texture maps,
+     - original input image.
+   - A shallow CNN with a Gaussian membership activation predicts the final normalized RGB output.
+   - The illumination map is returned for evaluation or regularization use, but the final reconstruction is produced by the refinement branch.
+
+### Current commands
+
+Preferred package CLI:
+
 ```bash
-uv run python src/train_deeplpf.py --scale_dataset 0 --epochs 50 --batch_size 32
+uv run fitzopt train --model illumination-unet --csv_path data/labels.csv --max_samples 100 --epochs 5 --batch_size 4
+uv run fitzopt evaluate --model illumination-unet --model_path models/illumination-unet.pth --csv_path data/labels.csv --split test --metrics_json results/illumination-unet-test.json
+uv run fitzopt infer --model illumination-unet --model_path models/illumination-unet.pth --csv_path data/labels.csv --output_dir results/illumination-unet
 ```
 
-**Run trained model evaluation:**
-```bash
-uv run python src/evaluate_deeplpf.py --num_samples 100 --batch_size 8
-```
-
-**Command to run inference:**
-```bash
-uv run python src/infer_deeplpf.py --model_path models/deeplpf.pth --csv_path data/labels.csv
-```
-
-- with optional parameters:
-`--max_samples 5` - limit number of samples to process
-`--output_dir output` - specify output directory
-`--device cuda` - specify device to use (cuda, mps, cpu)
-`--batch_size 4` - specify batch size
-
-```bash
-uv run python src/infer_deeplpf.py --model_path models/deeplpf.pth --csv_path data/labels.csv --max_samples 5
-```
-
----
-
-### Pipeline 2: Hybrid Retinex-Fuzzy-CNN (Advanced)
-
-### **Design Implementations included:**
-1. **Retinex FiLM U-Net (Stage 1):** Built the complete structural encoder-decoder U-Net directly tracking your requirements, including isolating the conditional bottleneck via a **Featurewise Linear Modulation (FiLM)** MLP block mapping `S` into the dynamic `gamma` and `beta` tensor adjustments to reconstruct the Illumination ($L$) and Reflectance ($R$) layers.
-2. **Deterministic CDH Extractor (Stage 2):** Engineered the explicit PyTorch convolutional block with securely fixed, mathematically defined static Sobel-driven edge parameters running without trainable tracking (using `requires_grad=False`).
-3. **Fuzzy-CNN Mapping (Stage 3):** Constructed the parameter-free Fuzzy Memebership logic replacing your standard ReLUs structurally on a shallow CNN to handle residual translation outputs explicitly accurately.
-4. **Matched Modularity:** Faithfully carried over the exact documentation styles, inline structural commentary formats, CLI configuration logic, SSIM constraints, and smart natively automated Apple Silicon (`mps`) / `cuda` scaling parameters found in your prior scripts naturally.
-
-### **How to Trigger Pipeline 2 Training**
-You can deploy it using the equivalent parameter arguments exactly like your existing DeepLPF models safely:
+Legacy wrapper commands still map to the same model:
 
 ```bash
 uv run python src/train_retinex.py --scale_dataset 100 --epochs 5 --batch_size 4
+uv run python src/evaluate_retinex.py --model_path models/illumination-unet.pth --csv_path data/labels.csv --split test --metrics_json results/illumination-unet-test.json
+uv run python src/infer_retinex.py --model_path models/illumination-unet.pth --csv_path data/labels.csv --output_dir results/illumination-unet
 ```
 
-**Command mapping for full training capability:**
-```bash
-uv run python src/train_retinex.py --scale_dataset 0 --epochs 50 --batch_size 32
-```
+## Evaluation Expectations
 
-**Run trained model evaluation:**
-```bash
-uv run python src/evaluate_retinex.py --num_samples 100 --batch_size 8
-```
+Evaluation now uses deterministic train/validation/test split assignment when a CSV does not already contain a `split` column. Reports should include:
 
-**Command to run inference:**
-```bash
-uv run python src/infer_retinex.py --model_path models/hybrid_retinex.pth --csv_path data/labels.csv
-```
+- model metrics grouped by Fitzpatrick scale,
+- identity-baseline metrics grouped by Fitzpatrick scale,
+- split name,
+- sample count,
+- command used to produce the report.
 
-- with optional parameters:
-`--max_samples 5` - limit number of samples to process
-`--output_dir output` - specify output directory
-`--device cuda` - specify device to use (cuda, mps, cpu)
-`--batch_size 4` - specify batch size
+See `docs/results-schema.md` for the JSON output shape.
+
+## Demo Dataset Path
+
+A fresh clone can generate a tiny synthetic demo dataset without downloading the full image corpus:
 
 ```bash
-uv run python src/infer_retinex.py --model_path models/hybrid_retinex.pth --csv_path data/labels.csv --max_samples 5
+uv run fitzopt create-demo-data --output_dir demo_assets --count 6
 ```
+
+The generated data is intended only for smoke testing the pipeline. It is not evidence of model quality.
