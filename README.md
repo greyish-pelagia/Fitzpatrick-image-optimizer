@@ -4,7 +4,37 @@ A PyTorch-based CLI project for Fitzpatrick-conditioned illumination normalizati
 
 This is a research-style project, not a clinical diagnostic system. It demonstrates how image restoration models can be conditioned on Fitzpatrick-scale metadata and evaluated with both aggregate and grouped metrics.
 
-## Results Demo
+## Results
+
+### Baseline comparison
+
+The models were evaluated against an identity / no-op baseline, which returns the degraded input image unchanged. This checks whether learned restoration improves over doing nothing.
+
+| Method                              |        L1 ↓ |       MSE ↓ |    PSNR ↑ |     SSIM ↑ |
+| ----------------------------------- | ----------: | ----------: | --------: | ---------: |
+| Baseline                            |     0.14564 |     0.03204 |     15.16 |     0.8218 |
+| DeepLPF-inspired residual-filter    |     0.11832 |     0.02226 | **16.86** | **0.8701** |
+| FiLM-conditioned illumination U-Net | **0.11559** | **0.02197** |     16.74 |     0.8134 |
+
+The residual-filter model performs best overall, improving SSIM from 0.8218 to 0.8701 and worst-group SSIM from 0.8193 to 0.8679. The illumination U-Net reduces pixel-level error but underperforms the identity baseline on SSIM, so it is treated as an experimental architecture rather than the primary model.
+
+#### Grouped Fitzpatrick evaluation
+
+| Method                              | FST I-II SSIM | FST III-IV SSIM | FST V-VI SSIM | Worst-group SSIM |
+| ----------------------------------- | ------------: | --------------: | ------------: | ---------------: |
+| Baseline                            |        0.8235 |          0.8193 |        0.8224 |           0.8193 |
+| DeepLPF-inspired residual-filter    |    **0.8718** |      **0.8679** |    **0.8699** |           0.8679 |
+| FiLM-conditioned illumination U-Net |        0.8147 |          0.8116 |        0.8133 |           0.8116 |
+
+#### Notes
+
+- The identity / no-op baseline returns the degraded input unchanged and is evaluated against the clean target image.
+- Metrics are reported on the same deterministic split for all methods.
+- Grouped metrics are computed by Fitzpatrick scale groups: I-II, III-IV, and V-VI.
+- The residual-filter is the primary model because it improves both aggregate SSIM and worst-group SSIM.
+- The illumination U-Net is retained as an experimental architecture: it improves L1/MSE but does not improve SSIM.
+
+### Processed images demo
 
 ![Example comparison grid](comparison_grid.png)
 
@@ -41,6 +71,7 @@ The full experiments use Fitzpatrick17k metadata and locally downloaded images. 
 To run inference on the proposed models, download the pre-trained model weights to `./models/` or train your own on your own dataset
 
 You can download our pre-trained model weights to use in testing from:
+
 - [residual-filter weights](https://drive.google.com/file/d/1jHoWKzvn4XPR-o4hmhq_G45eKlEbC57r/view?usp=sharing)
 - [illumination-unet weights](https://drive.google.com/file/d/1zlCs7tr93TvBxbGWz7aaJE87zn8KFJBP/view?usp=sharing)
 
