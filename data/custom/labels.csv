@@ -1,7 +1,0 @@
-training_image,ground_truth_image,Fitzpatrick scale
-data/cutom/images/img1_before.jpg,data/cutom/images/img1_before.jpg,2
-data/cutom/images/img2_before.jpg,data/cutom/images/img2_before.jpg,2
-data/cutom/images/img3_before.jpg,data/cutom/images/img3_before.jpg,2
-data/cutom/images/img4_before.jpg,data/cutom/images/img4_before.jpg,1
-data/cutom/images/img5_before.jpg,data/cutom/images/img5_before.jpg,1
-
