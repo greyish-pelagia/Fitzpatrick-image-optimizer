@@ -2,5 +2,6 @@ from fitzpatrick_optimizer.models.illumination_unet import IlluminationGuidedUNe
 from fitzpatrick_optimizer.models.residual_filter import (
     ParameterConditionedResidualFilter,
 )
+from fitzpatrick_optimizer.models.baseline import IdentityBaseline
 
-__all__ = ["IlluminationGuidedUNet", "ParameterConditionedResidualFilter"]
+__all__ = ["IlluminationGuidedUNet", "ParameterConditionedResidualFilter", "IdentityBaseline"]

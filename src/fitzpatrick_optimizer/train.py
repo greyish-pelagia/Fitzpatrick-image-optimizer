@@ -12,6 +12,7 @@ from fitzpatrick_optimizer.metrics import ssim_score
 from fitzpatrick_optimizer.models import (
     IlluminationGuidedUNet,
     ParameterConditionedResidualFilter,
+    IdentityBaseline
 )
 from fitzpatrick_optimizer.randomness import seed_everything
 
@@ -21,6 +22,8 @@ def create_model(model_name: str) -> nn.Module:
         return ParameterConditionedResidualFilter(pretrained=True)
     if model_name == "illumination-unet":
         return IlluminationGuidedUNet()
+    if model_name == "baseline":
+        return IdentityBaseline()
     raise ValueError(f"Unknown model: {model_name}")
 
 

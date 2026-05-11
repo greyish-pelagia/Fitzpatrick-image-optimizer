@@ -37,9 +37,10 @@ def evaluate(args: argparse.Namespace) -> dict[str, object]:
     dataloader = DataLoader(dataset, batch_size=args.batch_size, shuffle=False)
 
     model = create_model(args.model).to(device)
-    model.load_state_dict(
-        torch.load(args.model_path, map_location=device, weights_only=True)
-    )
+    if args.model != "baseline":
+        model.load_state_dict(
+            torch.load(args.model_path, map_location=device, weights_only=True)
+        )
     model.eval()
 
     model_rows: list[dict[str, float | int]] = []
@@ -85,7 +86,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--model",
-        choices=["residual-filter", "illumination-unet"],
+        choices=["residual-filter", "illumination-unet", "baseline"],
         required=True,
     )
     parser.add_argument("--model_path", required=True)

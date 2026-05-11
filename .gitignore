@@ -32,3 +32,8 @@ logs
 
 .vscode
 .pytest_cache
+
+# Unused local only docs
+A*.md
+C*.md
+P*.md
