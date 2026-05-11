@@ -28,3 +28,16 @@ def test_train_cli_help_runs():
     assert "--model" in result.stdout
     assert "residual-filter" in result.stdout
     assert "illumination-unet" in result.stdout
+
+
+def test_evaluate_cli_help_runs():
+    result = subprocess.run(
+        [sys.executable, "-m", "fitzpatrick_optimizer.evaluate", "--help"],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 0
+    assert "--split" in result.stdout
+    assert "--metrics_json" in result.stdout
