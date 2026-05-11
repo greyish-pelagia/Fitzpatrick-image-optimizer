@@ -41,3 +41,16 @@ def test_evaluate_cli_help_runs():
     assert result.returncode == 0
     assert "--split" in result.stdout
     assert "--metrics_json" in result.stdout
+
+
+def test_infer_cli_help_runs():
+    result = subprocess.run(
+        [sys.executable, "-m", "fitzpatrick_optimizer.infer", "--help"],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+
+    assert result.returncode == 0
+    assert "--model" in result.stdout
+    assert "--output_dir" in result.stdout
