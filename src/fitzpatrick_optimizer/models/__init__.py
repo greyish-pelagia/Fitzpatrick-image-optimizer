@@ -4,4 +4,8 @@ from fitzpatrick_optimizer.models.residual_filter import (
 )
 from fitzpatrick_optimizer.models.baseline import IdentityBaseline
 
-__all__ = ["IlluminationGuidedUNet", "ParameterConditionedResidualFilter", "IdentityBaseline"]
+__all__ = [
+    "IlluminationGuidedUNet",
+    "ParameterConditionedResidualFilter",
+    "IdentityBaseline",
+]
