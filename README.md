@@ -32,6 +32,15 @@ uv run fitzopt infer --model residual-filter --model_path models/demo/residual-f
 
 The full experiments use Fitzpatrick17k metadata and locally downloaded images. The repository does not vendor the full image dataset. Use `data/training_preprocess.py` to create synthetic pairs after downloading source images.
 
+### Pre-trained model weights
+
+To run inference on the proposed models, download the pre-trained model weights to `./models/` or train your own on your own dataset
+
+You can download our pre-trained model weights to use in testing from:
+
+- [residual-filter weights](https://drive.google.com/file/d/1jHoWKzvn4XPR-o4hmhq_G45eKlEbC57r/view?usp=sharing)
+- [illumination-unet weights](https://drive.google.com/file/d/1zlCs7tr93TvBxbGWz7aaJE87zn8KFJBP/view?usp=sharing)
+
 ## Evaluation
 
 Metrics are reported on deterministic train/validation/test splits. Public reports must include:

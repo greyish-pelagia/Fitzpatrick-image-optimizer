@@ -8,7 +8,7 @@ from fitzpatrick_optimizer.train import main as train_main
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Fitzpatrick image optimizer portfolio demo"
+        description="Fitzpatrick image optimizer"
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
     subparsers.add_parser("train", help="Train a model")

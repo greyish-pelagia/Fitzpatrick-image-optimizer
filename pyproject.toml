@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "fitzpatrick-image-optimizer"
-version = "0.1.0"
+version = "0.5.0"
 description = "Experimental Fitzpatrick-conditioned image illumination normalization demo."
 readme = "README.md"
 requires-python = ">=3.11"

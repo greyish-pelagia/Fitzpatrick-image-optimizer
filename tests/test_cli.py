@@ -6,7 +6,7 @@ import sys
 def test_package_imports():
     import fitzpatrick_optimizer
 
-    assert fitzpatrick_optimizer.__version__ == "0.1.0"
+    assert fitzpatrick_optimizer.__version__ == "0.5.0"
 
 
 def test_distribution_metadata_has_real_description():
