@@ -1,14 +1,43 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
 [project]
-name = "fitzpatric-image-optimizer"
+name = "fitzpatrick-image-optimizer"
 version = "0.1.0"
-description = "Add your description here"
+description = "Experimental Fitzpatrick-conditioned image illumination normalization demo."
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.11"
 dependencies = [
-    "matplotlib>=3.10.8",
-    "opencv-python>=4.13.0.92",
-    "pandas>=3.0.1",
-    "requests>=2.33.0",
-    "torch>=2.11.0",
-    "torchvision>=0.26.0",
+    "matplotlib>=3.8",
+    "numpy>=1.26",
+    "opencv-python>=4.9",
+    "pandas>=2.2",
+    "pytest>=8.2",
+    "ruff>=0.8",
+    "torch>=2.2",
+    "torchvision>=0.17",
 ]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.2",
+    "ruff>=0.8",
+]
+
+[project.scripts]
+fitzopt = "fitzpatrick_optimizer.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
